@@ -12,7 +12,7 @@ Documenter: Susan Potter (@mbbx6spp on GH)
 
 Before building this project on Ubuntu (tested on 11.10) you will need to install the following packages:
 
-    [sudo] apt-get install libapt-pkg-dev libcurl4-openssl-dev
+    [sudo] apt-get install build-essential libapt-pkg-dev libcurl4-openssl-dev libssl-dev
 
 To build this project you simply run `make`. It will produce a binary named `s3` under the `src/` dir.
 
