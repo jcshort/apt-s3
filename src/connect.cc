@@ -14,6 +14,7 @@
 #include "connect.h"
 #include <apt-pkg/error.h>
 #include <apt-pkg/fileutl.h>
+#include <apt-pkg/strutl.h>
 
 #include <stdio.h>
 #include <errno.h>
@@ -41,13 +42,13 @@
 // #define SETFAIL(Owner, String) Owner->SetFailExtraMsg(String)
 // #endif
 
-static string LastHost;
+static std::string LastHost;
 static int LastPort = 0;
 static struct addrinfo *LastHostAddr = 0;
 static struct addrinfo *LastUsed = 0;
 
 // Set of IP/hostnames that we timed out before or couldn't resolve
-static std::set<string> bad_addr;
+static std::set<std::string> bad_addr;
 
 // RotateDNS - Select a new server from a DNS rotation			/*{{{*/
 // ---------------------------------------------------------------------
@@ -64,7 +65,7 @@ void RotateDNS()
 // DoConnect - Attempt a connect operation				/*{{{*/
 // ---------------------------------------------------------------------
 /* This helper function attempts a connection to a single address. */
-static bool DoConnect(struct addrinfo *Addr,string Host,
+static bool DoConnect(struct addrinfo *Addr,std::string Host,
 		      unsigned long TimeOut,int &Fd,pkgAcqMethod *Owner)
 {
    // Show a status indicator
@@ -79,7 +80,7 @@ static bool DoConnect(struct addrinfo *Addr,string Host,
    Owner->Status(_("Connecting to %s (%s)"),Host.c_str(),Name);
 
    // if that addr did timeout before, we do not try it again
-   if(bad_addr.find(string(Name)) != bad_addr.end()) 
+   if(bad_addr.find(std::string(Name)) != bad_addr.end())
       return false;
 
    /* If this is an IP rotation store the IP we are using.. If something goes
@@ -106,7 +107,7 @@ static bool DoConnect(struct addrinfo *Addr,string Host,
    /* This implements a timeout for connect by opening the connection
       nonblocking */
    if (WaitFd(Fd,true,TimeOut) == false) {
-      bad_addr.insert(bad_addr.begin(), string(Name));
+      bad_addr.insert(bad_addr.begin(), std::string(Name));
       SETFAIL(Owner, "Timeout");
       return _error->Error(_("Could not connect to %s:%s (%s), "
 			   "connection timed out"),Host.c_str(),Service,Name);
@@ -133,7 +134,7 @@ static bool DoConnect(struct addrinfo *Addr,string Host,
 // Connect - Connect to a server					/*{{{*/
 // ---------------------------------------------------------------------
 /* Performs a connection to the server */
-bool Connect(string Host,int Port,const char *Service,int DefPort,int &Fd,
+bool Connect(std::string Host,int Port,const char *Service,int DefPort,int &Fd,
 	     unsigned long TimeOut,pkgAcqMethod *Owner)
 {
    if (_error->PendingError() == true)

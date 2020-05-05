@@ -5,7 +5,7 @@ clean:
 	rm -f *.o s3
 
 s3: s3_main.o s3.o connect.o
-	 g++ -o s3 s3.o s3_main.o connect.o -lapt-pkg -lapt-inst -lssl -lcrypto
+	 g++ -o s3 s3.o s3_main.o connect.o -lapt-pkg -lssl -lcrypto
 
 %.o: %.cc
 	 gcc  -I /usr/include -I./ -g -c $<

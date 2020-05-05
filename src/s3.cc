@@ -41,7 +41,9 @@
    ##################################################################### */
 									/*}}}*/
 // Include Files							/*{{{*/
+#include <apt-pkg/configuration.h>
 #include <apt-pkg/fileutl.h>
+#include <apt-pkg/strutl.h>
 #include <apt-pkg/acquire-method.h>
 #include <apt-pkg/error.h>
 #include <apt-pkg/hashes.h>
@@ -654,7 +656,7 @@ bool ServerState::HeaderLine(string Line)
    
    if (stringcasecmp(Tag,"Last-Modified:") == 0)
    {
-      if (StrToTime(Val,Date) == false)
+      if (RFC1123StrToTime(Val,Date) == false)
 	 return _error->Error(_("Unknown date format"));
       return true;
    }
@@ -668,7 +670,7 @@ bool ServerState::HeaderLine(string Line)
 /* This places the http request in the outbound buffer */
 void HttpMethod::SendReq(FetchItem *Itm,CircleBuf &Out)
 {
-   URI Uri = Itm->Uri;
+   URI Uri(Itm->Uri);
 
    // The HTTP server expects a hostname with a trailing :port
    char Buf[1000];
@@ -740,14 +742,14 @@ void HttpMethod::SendReq(FetchItem *Itm,CircleBuf &Out)
    {
       // In this case we send an if-range query with a range header
       sprintf(Buf,"Range: bytes=%li-\r\nIf-Range: %s\r\n",(long)SBuf.st_size - 1,
-	      TimeRFC1123(SBuf.st_mtime).c_str());
+	      TimeRFC1123(SBuf.st_mtime, false).c_str());
       Req += Buf;
    }
    else
    {
       if (Itm->LastModified != 0)
       {
-	 sprintf(Buf,"If-Modified-Since: %s\r\n",TimeRFC1123(Itm->LastModified).c_str());
+	 sprintf(Buf,"If-Modified-Since: %s\r\n",TimeRFC1123(Itm->LastModified, false).c_str());
 	 Req += Buf;
       }
    }
@@ -812,8 +814,8 @@ void HttpMethod::SendReq(FetchItem *Itm,CircleBuf &Out)
   }
 
   //cerr << "user " << user << "\n";
-	Req += "Authorization: AWS " + user + ":" + signatureString + "\r\n";
-   	Req += "User-Agent: Ubuntu APT-HTTP/1.3 ("VERSION")\r\n\r\n";
+    Req += "Authorization: AWS " + user + ":" + signatureString + "\r\n";
+    Req += "User-Agent: Ubuntu APT-HTTP/1.3 (" VERSION ")\r\n\r\n";
 
    if (Debug == true)
      cerr << "Request" << endl << Req << endl;
@@ -1160,7 +1162,7 @@ bool HttpMethod::Fetch(FetchItem *)
 	 break;
       
       // Make sure we stick with the same server
-      if (Server->Comp(I->Uri) == false)
+      if (Server->Comp(URI(I->Uri)) == false)
 	 break;
       if (QueueBack == I)
       {
@@ -1219,10 +1221,10 @@ int HttpMethod::Loop()
 	 continue;
       
       // Connect to the server
-      if (Server == 0 || Server->Comp(Queue->Uri) == false)
+      if (Server == 0 || Server->Comp(URI(Queue->Uri)) == false)
       {
 	 delete Server;
-	 Server = new ServerState(Queue->Uri,this);
+	 Server = new ServerState(URI(Queue->Uri),this);
       }
       /* If the server has explicitly said this is the last connection
          then we pre-emptively shut down the pipeline and tear down 
